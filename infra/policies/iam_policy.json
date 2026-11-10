@@ -1,0 +1,209 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "DynamoDBOrdersTableAccess",
+      "Effect": "Allow",
+      "Action": [
+        "dynamodb:GetItem",
+        "dynamodb:PutItem",
+        "dynamodb:UpdateItem",
+        "dynamodb:DeleteItem",
+        "dynamodb:Query",
+        "dynamodb:Scan",
+        "dynamodb:DescribeTable",
+        "dynamodb:GetRecords",
+        "dynamodb:GetShardIterator"
+      ],
+      "Resource": [
+        "arn:aws:dynamodb:*:*:table/orders",
+        "arn:aws:dynamodb:*:*:table/orders/index/*"
+      ],
+      "Description": "Permite operaciones CRUD completas sobre la tabla de órdenes y sus índices secundarios"
+    },
+    {
+      "Sid": "SQSOrdersQueueAccess",
+      "Effect": "Allow",
+      "Action": [
+        "sqs:SendMessage",
+        "sqs:ReceiveMessage",
+        "sqs:DeleteMessage",
+        "sqs:GetQueueAttributes",
+        "sqs:GetQueueUrl",
+        "sqs:ListQueues",
+        "sqs:PurgeQueue",
+        "sqs:SetQueueAttributes"
+      ],
+      "Resource": [
+        "arn:aws:sqs:*:*:orders-queue",
+        "arn:aws:sqs:*:*:orders-dlq"
+      ],
+      "Description": "Permite enviar, recibir y eliminar mensajes de las colas principal y dead letter del servicio de órdenes"
+    },
+    {
+      "Sid": "LambdaExecution",
+      "Effect": "Allow",
+      "Action": [
+        "lambda:InvokeFunction",
+        "lambda:GetFunction",
+        "lambda:GetFunctionConfiguration",
+        "lambda:UpdateFunctionConfiguration",
+        "lambda:UpdateFunctionCode",
+        "lambda:ListVersionsByFunction",
+        "lambda:ListAliases"
+      ],
+      "Resource": [
+        "arn:aws:lambda:*:*:function:orders-processor"
+      ],
+      "Description": "Permite invocar y gestionar la función Lambda de procesamiento de órdenes"
+    },
+    {
+      "Sid": "APIGatewayExecution",
+      "Effect": "Allow",
+      "Action": [
+        "apigateway:GET",
+        "apigateway:POST",
+        "apigateway:PUT",
+        "apigateway:DELETE",
+        "apigateway:PATCH",
+        "apigateway:HEAD",
+        "apigateway:OPTIONS",
+        "apigateway:Invoke"
+      ],
+      "Resource": [
+        "arn:aws:apigateway:*:/restapis/*",
+        "arn:aws:apigateway:*:/restapis/*/resources/*",
+        "arn:aws:apigateway:*:/restapis/*/resources/*/methods/*"
+      ],
+      "Description": "Permite gestionar y ejecutar la API REST del servicio de órdenes"
+    },
+    {
+      "Sid": "CloudWatchLogs",
+      "Effect": "Allow",
+      "Action": [
+        "logs:CreateLogGroup",
+        "logs:CreateLogStream",
+        "logs:PutLogEvents",
+        "logs:DescribeLogGroups",
+        "logs:DescribeLogStreams",
+        "logs:GetLogEvents",
+        "logs:FilterLogEvents"
+      ],
+      "Resource": [
+        "arn:aws:logs:*:*:log-group:/aws/lambda/orders-processor:*",
+        "arn:aws:logs:*:*:log-group:/aws/apigateway/orders-api:*"
+      ],
+      "Description": "Permite escribir y consultar logs de CloudWatch para Lambda y API Gateway del servicio de órdenes"
+    },
+    {
+      "Sid": "CloudWatchMetrics",
+      "Effect": "Allow",
+      "Action": [
+        "cloudwatch:PutMetricData",
+        "cloudwatch:GetMetricStatistics",
+        "cloudwatch:ListMetrics"
+      ],
+      "Resource": "*",
+      "Description": "Permite publicar métricas personalizadas de CloudWatch para el monitoreo del servicio de órdenes"
+    },
+    {
+      "Sid": "X-RayTracing",
+      "Effect": "Allow",
+      "Action": [
+        "xray:PutTraceSegments",
+        "xray:PutTelemetryRecords",
+        "xray:GetSamplingRules",
+        "xray:GetSamplingTargets"
+      ],
+      "Resource": "*",
+      "Description": "Permite habilitar tracing con AWS X-Ray para analizar el rendimiento del servicio de órdenes"
+    },
+    {
+      "Sid": "KMSKeyAccess",
+      "Effect": "Allow",
+      "Action": [
+        "kms:Encrypt",
+        "kms:Decrypt",
+        "kms:GenerateDataKey",
+        "kms:DescribeKey",
+        "kms:ReEncrypt*"
+      ],
+      "Resource": "arn:aws:kms:*:*:key/*",
+      "Condition": {
+        "StringEquals": {
+          "kms:CallerAccount": "${data.aws_caller_identity.current.account_id}"
+        },
+        "StringLike": {
+          "kms:ResourceTag/Service": "orders"
+        }
+      },
+      "Description": "Permite cifrar y descifrar datos sensibles en la tabla DynamoDB usando claves KMS gestionadas por el servicio"
+    },
+    {
+      "Sid": "EventBridgeEvents",
+      "Effect": "Allow",
+      "Action": [
+        "events:PutEvents",
+        "events:DescribeEventBus",
+        "events:ListRules",
+        "events:ListTargetsByRule"
+      ],
+      "Resource": [
+        "arn:aws:events:*:*:event-bus/default",
+        "arn:aws:events:*:*:rule/orders-*"
+      ],
+      "Description": "Permite publicar y consumir eventos de EventBridge para la arquitectura basada en eventos del servicio de órdenes"
+    },
+    {
+      "Sid": "S3ArtifactsAccess",
+      "Effect": "Allow",
+      "Action": [
+        "s3:GetObject",
+        "s3:PutObject",
+        "s3:ListBucket",
+        "s3:GetBucketLocation"
+      ],
+      "Resource": [
+        "arn:aws:s3:::orders-artifacts",
+        "arn:aws:s3:::orders-artifacts/*"
+      ],
+      "Description": "Permite acceder al bucket S3 donde se almacenan artefactos y archivos del servicio de órdenes"
+    },
+    {
+      "Sid": "SecHubReadOnly",
+      "Effect": "Allow",
+      "Action": [
+        "ec2:DescribeVpcs",
+        "ec2:DescribeSubnets",
+        "ec2:DescribeSecurityGroups",
+        "ec2:DescribeInstances",
+        "ec2:DescribeNetworkInterfaces"
+      ],
+      "Resource": "*",
+      "Description": "Permite describir recursos de VPC para verificar la configuración de red del servicio de órdenes"
+    },
+    {
+      "Sid": "DenyDeleteOrdersResources",
+      "Effect": "Deny",
+      "Action": [
+        "dynamodb:DeleteTable",
+        "sqs:DeleteQueue",
+        "lambda:DeleteFunction",
+        "apigateway:DeleteRestApi"
+      ],
+      "Resource": [
+        "arn:aws:dynamodb:*:*:table/orders",
+        "arn:aws:sqs:*:*:orders-queue",
+        "arn:aws:sqs:*:*:orders-dlq",
+        "arn:aws:lambda:*:*:function:orders-processor",
+        "arn:aws:apigateway:*:/restapis/*"
+      ],
+      "Condition": {
+        "StringNotEquals": {
+          "aws:PrincipalTag/Environment": "prod"
+        }
+      },
+      "Description": "Impide la eliminación de recursos críticos del servicio de órdenes excepto en entorno de producción"
+    }
+  ]
+}
